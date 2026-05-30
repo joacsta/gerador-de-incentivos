@@ -1,0 +1,66 @@
+DECLARE @idCampanha int = {{ campanha_id }},
+        @idGrupoProdutoCampanha int = {{ campanha_grupo_prd_id }},
+        @dhAtualizacao datetime = GETDATE();
+
+DROP TABLE IF EXISTS #BASE_ANALITICO;
+DROP TABLE IF EXISTS #RESULTADOS;
+
+SELECT
+    T.idParticipante,
+    COUNT(1) AS vrRealizado
+INTO #BASE_ANALITICO
+FROM DEMO.Analytics.tblTransacao T
+WHERE T.idCampanha = @idCampanha
+{% if grupos_id %} AND T.idGrupoProduto IN {{ grupos_id | inclause }} {% endif %}
+{% if produto_id %} AND T.idProduto IN {{ produto_id | inclause }} {% endif %}
+{% if periodo_id %} AND T.idPeriodo IN {{ periodo_id | inclause }} {% endif %}
+{% if sub_redes %} AND T.idSubRede IN {{ sub_redes | inclause }} {% endif %}
+GROUP BY T.idParticipante;
+
+SELECT
+    A.idParticipante AS nuParticipante,
+    G.idGatilho,
+    GN.idGatilhoNivel,
+    GN.vrNivel AS vrObjetivo,
+    A.vrRealizado,
+    IIF(A.vrRealizado >= GN.vrNivel, 1, 0) AS icHabilitado,
+    @dhAtualizacao AS dhAtualizacao
+INTO #RESULTADOS
+FROM #BASE_ANALITICO A
+JOIN DEMO.Program.tblCampanhaGatilho G ON G.idCampanha = @idCampanha
+JOIN DEMO.Program.tblCampanhaGatilhoNivel GN ON GN.idGatilho = G.idGatilho;
+
+MERGE DEMO.Program.tblGatilhoParticipante AS TARGET
+USING #RESULTADOS AS SOURCE
+ON (
+    TARGET.idGatilho = SOURCE.idGatilho
+    AND TARGET.nuParticipante = SOURCE.nuParticipante
+    AND TARGET.idGatilhoNivel = SOURCE.idGatilhoNivel
+)
+WHEN MATCHED THEN UPDATE SET
+    TARGET.vrObjetivo = SOURCE.vrObjetivo,
+    TARGET.vrRealizado = SOURCE.vrRealizado,
+    TARGET.icAtingido = SOURCE.icHabilitado,
+    TARGET.dhAtualizacao = SOURCE.dhAtualizacao
+WHEN NOT MATCHED BY TARGET THEN INSERT (
+    idGatilho,
+    idGatilhoNivel,
+    nuParticipante,
+    vrObjetivo,
+    vrRealizado,
+    icAtingido,
+    dhAtualizacao
+) VALUES (
+    SOURCE.idGatilho,
+    SOURCE.idGatilhoNivel,
+    SOURCE.nuParticipante,
+    SOURCE.vrObjetivo,
+    SOURCE.vrRealizado,
+    SOURCE.icHabilitado,
+    SOURCE.dhAtualizacao
+)
+WHEN NOT MATCHED BY SOURCE AND TARGET.idGatilho IN (SELECT DISTINCT idGatilho FROM #RESULTADOS)
+THEN DELETE;
+
+DROP TABLE IF EXISTS #BASE_ANALITICO;
+DROP TABLE IF EXISTS #RESULTADOS;
