@@ -1,21 +1,26 @@
+from os import getenv
 from argparse import ArgumentParser
+from dotenv import load_dotenv
 
-from app.constants import PROD, STAGE
+load_dotenv()
+
+AMBIENTE_PRINCIPAL = getenv("AMBIENTE_PRINCIPAL")
+AMBIENTE_TESTE = getenv("AMBIENTE_TESTE")
 
 
-def argument():
-    parser = ArgumentParser(description="Conexão com banco de dados (exemplo)")
+def obter_argumentos():
+    parser = ArgumentParser(description="Conexão com Fonte de Dados")
     parser.add_argument(
         "-p",
-        "--prod",
+        "--principal",
         action="store_const",
-        const=PROD,
-        default=STAGE,
-        help="escolha do servidor: prod (stage definido por padrão)",
+        const=AMBIENTE_PRINCIPAL,
+        default=AMBIENTE_TESTE,
+        help="escolha do servidor: principal (teste definido por padrão)",
         required=False,
     )
 
     args = parser.parse_args()
-    server = args.prod
-    database = "DEMO"
-    return server, database
+    servidor = args.principal
+    banco_dados = "SISTEMA_DB"
+    return servidor, banco_dados

@@ -4,59 +4,82 @@ from os import name
 from subprocess import run
 from time import sleep
 
-from app.commands.commands import ask_boolean
-from app.constants import PROD, STAGE, USER_OPTIONS
-from app.services.apuracao import apuracao_main
-from app.services.setup import execute_setup, setup_main
-from infra.db.connection import servidor
+import questionary
+
+from app.commands.commands import ask_booleano
+from app.config import AMBIENTE_PRINCIPAL, AMBIENTE_TESTE
+from app.constants import OPCOES_USUARIO
+from app.services.processamento import processamento_main
+from app.services.configuracao import executar_configuracao, configuracao_main
+from infra.db.conn import servidor
 
 
-def opcao_errada() -> None:
+def opcao_invalida() -> None:
     print("Opção inválida.")
     sleep(1)
 
 
 def sair() -> None:
+    print("\nAté logo.")
     raise SystemExit(0)
 
 
-def executa_apuracao() -> None:
-    eng = servidor.database_connection
-    setup_created = setup_main(eng)
-    apuracao = apuracao_main(setup_created.grupo_produto, setup_created.campanha, eng)
+def fluxo_processamento() -> None:
+    motor = servidor.conectar
+    configuracao_criada = configuracao_main(motor)
+    processamento = processamento_main(
+        configuracao_criada.categoria_vinculada,
+        configuracao_criada.registro_principal,
+        configuracao_criada.condicoes,
+        configuracao_criada.condicoes_nivel,
+        motor,
+    )
 
-    if servidor.server_name == STAGE:
-        ask = ask_boolean(f"Deseja inserir esse mesmo programa em produção ({PROD})?")
-        if ask:
-            servidor.change_connection
-            new_engine = servidor.database_connection
+    if servidor.nome_servidor == AMBIENTE_TESTE:
+        replicar = ask_booleano(
+            f"Deseja inserir este mesmo registro no ambiente principal ({AMBIENTE_PRINCIPAL})?"
+        )
+        if replicar:
+            servidor.alterar_conexao
+            novo_motor = servidor.conectar
 
-            setup_created.reset_pks
-            execute_setup(setup_created, new_engine)
+            configuracao_criada.reset_pks
+            executar_configuracao(configuracao_criada, novo_motor)
 
-            apuracao.create_apuracao(apuracao.query, apuracao.params)
-            apuracao.execute(apuracao.statement, new_engine)
+            nova_query, novos_parametros = processamento.selecionar_modelo(
+                processamento.processamento_selecionado
+            )
+            declaracao = processamento.criar_declaracao(nova_query, novos_parametros)
 
-
-def executa_setup() -> None:
-    eng = servidor.database_connection
-    setup_created = setup_main(eng)
-    if servidor.server_name == STAGE:
-        ask = ask_boolean(f"Deseja inserir estes mesmos dados em produção ({PROD})?")
-        if ask:
-            servidor.change_connection
-            new_engine = servidor.database_connection
-
-            setup_created.reset_pks
-            execute_setup(setup_created, new_engine)
+            processamento.criar_registro(nova_query, novos_parametros)
+            processamento.execute(declaracao, novo_motor)
 
 
-USER_CHOICES = {
-    "1": executa_apuracao,
-    "2": executa_setup,
-    "apuração": executa_apuracao,
-    "setup": executa_setup,
+def fluxo_configuracao() -> None:
+    motor = servidor.conectar
+    configuracao_criada = configuracao_main(motor)
+
+    if servidor.nome_servidor == AMBIENTE_TESTE:
+        replicar = ask_booleano(
+            f"Deseja inserir estes mesmos dados no ambiente principal ({AMBIENTE_PRINCIPAL})?"
+        )
+        if replicar:
+            servidor.alterar_conexao
+            novo_motor = servidor.conectar
+
+            configuracao_criada.reset_pks
+            executar_configuracao(configuracao_criada, novo_motor)
+
+
+OPCOES_SELECAO = {
+    "1": fluxo_processamento,
+    "2": fluxo_configuracao,
+    "processamento": fluxo_processamento,
+    "p": fluxo_processamento,
+    "configuracao": fluxo_configuracao,
+    "c": fluxo_configuracao,
     "q": sair,
+    "exit": sair,
 }
 
 
@@ -64,9 +87,8 @@ def menu() -> None:
     while True:
         run("cls" if name == "nt" else "clear", shell=True, check=False)
 
-        print("GERADOR DE PROGRAMAS DE INCENTIVO")
-        print(*USER_OPTIONS, sep="\n")
-        input_user = input("Selecione o que deseja fazer: ")
+        questionary.print("SISTEMA GERADOR DE REGISTROS\n", style="bold")
+        print(*OPCOES_USUARIO, sep="\n")
+        pergunta = input("\nSelecione o que deseja fazer: ")
 
-        USER_CHOICES.get(input_user.strip().lower(), opcao_errada)()
-        return
+        OPCOES_SELECAO.get(pergunta.strip().lower(), lambda: opcao_invalida)()

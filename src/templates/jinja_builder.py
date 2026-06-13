@@ -5,87 +5,99 @@ from pathlib import Path
 from jinjasql import JinjaSql
 from questionary import select
 
-from app.commands.commands import ask_apuracao
-from app.constants import GRUPO_PRODUTOS
-from core.domain.models import GrupoProduto
-from infra.db.connection import servidor
-from infra.db.repositories import select_statement_grupo_produto
+from app.commands.commands import ask_modelo_processamento
+from app.constants import CATEGORIAS
+from core.domain.models import Condicao, CondicaoNivel, Categoria
+from infra.db.conn import servidor
+from infra.db.repositories import select_statement_categoria
 
-TEMPLATES_DIR = Path(__file__).parent / ".sql"
-
-
-def select_template() -> str:
-    return ask_apuracao()
+DIRETORIO_TEMPLATES = Path(__file__).parent / ".sql"
 
 
-def aux_template_params(pergunta: str, escolhas: list[str], input_user: str):
-    id_specified = select(pergunta, escolhas, show_selected=True).ask()
-    if id_specified.startswith("s"):
-        id_input = input(input_user)
+def aux_parametros_template(pergunta: str, escolhas: list[str], input_usuario: str):
+    id_especificado = select(pergunta, escolhas, show_selected=True).ask()
+    if id_especificado.startswith("s"):
+        entrada_id = input(input_usuario)
         lista_especificada_id = [
-            int(x) if x.isdigit() else str(x) for x in id_input.split()
+            int(x) if x.isnumeric() else str(x) for x in entrada_id.split()
         ]
         return lista_especificada_id
     return None
 
 
-def load_template(apuracao_key: str) -> str:
-    template_path = TEMPLATES_DIR / f"{apuracao_key}.j2"
-    return template_path.read_text(encoding="utf-8")
+def carregar_template(chave_processamento: str) -> str:
+    caminho_template = DIRETORIO_TEMPLATES / f"{chave_processamento}.j2"
+    return caminho_template.read_text(encoding="utf-8")
 
 
-def template_params(apuracao: str, nome_produto: str, novo_grupo_produto: GrupoProduto):
-    list_id_grupo_produto = []
-    list_siglas_unidades = []
-    list_subredes = []
+def selecionar_template() -> str:
+    template_processamento = ask_modelo_processamento()
+    return carregar_template(template_processamento)
 
+
+def parametros_template(
+    processamento,
+    nome_categoria: str,
+    nova_categoria: Categoria,
+    condicoes: Condicao,
+    condicoes_niveis: CondicaoNivel,
+):
+
+    lista_categoria = []
+    lista_siglas_entidades = []
+    lista_condicoes = []
+
+    processamento_entidades = carregar_template("metodo_ramificacao")
     jinja = JinjaSql()
-    engine = servidor.database_connection
+    motor = servidor.conectar
 
-    list_produto_id = aux_template_params(
-        "Deseja limitar a apuração a produtos específicos?",
+    if len(condicoes.lista_condicoes) > 1:
+        print("\nRevise os ID's após a geração do processamento.\n")
+        for nivel in condicoes_niveis.lista_niveis:
+            lista_condicoes.append(nivel["idCondicao"])
+
+    lista_item_id = aux_parametros_template(
+        "O registro especifica um item ou métrica secundária?",
         ["sim", "não"],
-        "Insira os IDs dos produtos (separe por espaços, exemplo: '10 11 13'): ",
+        "insira os id's dos itens (separe por espaços, exemplo: '10 11 13'...): ",
     )
-    list_periodo_id = aux_template_params(
-        "Deseja limitar a apuração a períodos específicos?",
+    lista_periodo_id = aux_parametros_template(
+        "O registro possui delimitação de períodos específicos?",
         ["sim", "não"],
-        "Insira os IDs dos períodos (separe por espaços, exemplo: '1 2'): ",
+        "insira os id's dos períodos (separe por espaços, exemplo: '1 2'...): ",
     )
 
-    if apuracao == "unidades":
-        list_siglas_unidades = aux_template_params(
-            "Deseja especificar as unidades participantes?",
+    if processamento == processamento_entidades:
+        lista_siglas_entidades = aux_parametros_template(
+            "Deseja especificar as entidades para o registro?",
             ["sim", "não"],
-            "Insira as siglas das unidades (ex: SEC, SEV, SEE): ",
+            "insira a sigla das entidades (ex: ENT, RAM, SEC): ",
         )
 
-    list_subredes = aux_template_params(
-        "Deseja limitar a apuração a subsegmentos?",
+    lista_sub_grupos_id = aux_parametros_template(
+        "O registro especifica sub-grupos ou ramificações exclusivas?",
         ["sim", "não"],
-        "Insira os IDs de subsegmentos (separe por espaços, exemplo: '3 4 5'): ",
+        "insira os id's dos sub-grupos (separe por espaços, exemplo: '3 4 5'...): ",
     )
 
-    if nome_produto in list(GRUPO_PRODUTOS.keys()):
-        id_grupo_produto = GRUPO_PRODUTOS[nome_produto]
-        list_id_grupo_produto.extend(
-            id_grupo_produto
-            if isinstance(id_grupo_produto, list)
-            else [id_grupo_produto]
+    if nome_categoria in list(CATEGORIAS.keys()):
+        id_categoria = CATEGORIAS[nome_categoria]
+        lista_categoria.extend(
+            id_categoria if isinstance(id_categoria, list) else [id_categoria]
         )
 
-    data = {
-        "campanha_id": novo_grupo_produto.id_campanha,
-        "campanha_grupo_prd_id": select_statement_grupo_produto(
-            novo_grupo_produto.id_campanha, engine
+    dados = {
+        "registro_id": nova_categoria.id_registro,
+        "registro_categoria_id": select_statement_categoria(
+            nova_categoria.id_registro, motor
         ),
-        "grupos_id": list_id_grupo_produto,
-        "produto_id": list_produto_id,
-        "periodo_id": list_periodo_id,
-        "siglas_unidades": list_siglas_unidades,
-        "sub_redes": list_subredes,
+        "categorias_id": lista_categoria,
+        "item_id": lista_item_id,
+        "periodo_id": lista_periodo_id,
+        "siglas_entidades": lista_siglas_entidades,
+        "sub_grupos": lista_sub_grupos_id,
+        "condicoes_variaveis": lista_condicoes,
     }
 
-    template = load_template(apuracao)
-    query, bind_params = jinja.prepare_query(template, data)
-    return query, bind_params
+    query, parametros_bind = jinja.prepare_query(processamento, dados)
+    return query, parametros_bind

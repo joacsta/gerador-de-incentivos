@@ -1,42 +1,51 @@
 from sqlalchemy import MetaData, Table, select
 
-from infra.db.connection import servidor
+from infra.db.conn import servidor
 
 metadata = MetaData()
 
 
-def table_campanha() -> Table:
-    engine = servidor.database_connection
-    return Table("tblCampanha", metadata, autoload_with=engine, schema="Campanha")
+def table_registro() -> Table:
+    motor = servidor.conectar
+    return Table("tblRegistro", metadata, autoload_with=motor, schema="ModuloPrincipal")
 
 
-def table_grupo_produto() -> Table:
-    engine = servidor.database_connection
+def table_categoria() -> Table:
+    motor = servidor.conectar
     return Table(
-        "tblGrupoProdutoCampanha", metadata, autoload_with=engine, schema="Campanha"
+        "tblCategoriaVinculada", metadata, autoload_with=motor, schema="ModuloPrincipal"
     )
 
 
-def table_premiacao() -> Table:
-    engine = servidor.database_connection
-    return Table("tblPremiacao", metadata, autoload_with=engine, schema="Campanha")
+def table_retorno() -> Table:
+    motor = servidor.conectar
+    return Table("tblRetorno", metadata, autoload_with=motor, schema="ModuloPrincipal")
 
 
-def table_gatilho() -> Table:
-    engine = servidor.database_connection
+def table_condicao() -> Table:
+    motor = servidor.conectar
     return Table(
-        "tblCampanhaGatilho", metadata, autoload_with=engine, schema="Campanha"
+        "tblRegistroCondicao", metadata, autoload_with=motor, schema="ModuloPrincipal"
     )
 
 
-def table_gatilho_nivel() -> Table:
-    engine = servidor.database_connection
+def table_condicao_nivel() -> Table:
+    motor = servidor.conectar
     return Table(
-        "tblCampanhaGatilhoNivel", metadata, autoload_with=engine, schema="Campanha"
+        "tblRegistroCondicaoNivel",
+        metadata,
+        autoload_with=motor,
+        schema="ModuloPrincipal",
     )
 
 
-def select_stmt_campanhas():
-    engine = servidor.database_connection
-    user_table = Table("tblCampanha", metadata, autoload_with=engine, schema="Campanha")
-    return select(user_table).order_by(user_table.columns.idCampanha.desc()).limit(10)
+def select_stmt_registros():
+    motor = servidor.conectar
+    tabela_usuario = Table(
+        "tblRegistro", metadata, autoload_with=motor, schema="ModuloPrincipal"
+    )
+    return (
+        select(tabela_usuario)
+        .order_by(tabela_usuario.columns.idRegistro.desc())
+        .limit(10)
+    )

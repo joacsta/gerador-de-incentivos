@@ -1,0 +1,66 @@
+DECLARE @idRegistro int = {{ registro_id }},
+        @idCategoriaVinculada int = {{ registro_categoria_id }},
+        @dhAtualizacao datetime = GETDATE();
+
+DROP TABLE IF EXISTS #BASE_ANALITICO;
+DROP TABLE IF EXISTS #RESULTADOS;
+
+SELECT
+    T.idEntidade,
+    COUNT(1) AS vrRealizado
+INTO #BASE_ANALITICO
+FROM SISTEMA.Analytics.tblEvento T
+WHERE T.idRegistro = @idRegistro
+{% if categorias_id %} AND T.idCategoria IN {{ categorias_id | inclause }} {% endif %}
+{% if item_id %} AND T.idItem IN {{ item_id | inclause }} {% endif %}
+{% if periodo_id %} AND T.idPeriodo IN {{ periodo_id | inclause }} {% endif %}
+{% if sub_grupos %} AND T.idSubGrupo IN {{ sub_grupos | inclause }} {% endif %}
+GROUP BY T.idEntidade;
+
+SELECT
+    A.idEntidade AS nuEntidade,
+    C.idCondicao,
+    CN.idCondicaoNivel,
+    CN.vrNivel AS vrObjetivo,
+    A.vrRealizado,
+    IIF(A.vrRealizado >= CN.vrNivel, 1, 0) AS icHabilitado,
+    @dhAtualizacao AS dhAtualizacao
+INTO #RESULTADOS
+FROM #BASE_ANALITICO A
+JOIN SISTEMA.Motor.tblRegistroCondicao C ON C.idRegistro = @idRegistro
+JOIN SISTEMA.Motor.tblRegistroCondicaoNivel CN ON CN.idCondicao = C.idCondicao;
+
+MERGE SISTEMA.Motor.tblCondicaoEntidade AS TARGET
+USING #RESULTADOS AS SOURCE
+ON (
+    TARGET.idCondicao = SOURCE.idCondicao
+    AND TARGET.nuEntidade = SOURCE.nuEntidade
+    AND TARGET.idCondicaoNivel = SOURCE.idCondicaoNivel
+)
+WHEN MATCHED THEN UPDATE SET
+    TARGET.vrObjetivo = SOURCE.vrObjetivo,
+    TARGET.vrRealizado = SOURCE.vrRealizado,
+    TARGET.icAtingido = SOURCE.icHabilitado,
+    TARGET.dhAtualizacao = SOURCE.dhAtualizacao
+WHEN NOT MATCHED BY TARGET THEN INSERT (
+    idCondicao,
+    idCondicaoNivel,
+    nuEntidade,
+    vrObjetivo,
+    vrRealizado,
+    icAtingido,
+    dhAtualizacao
+) VALUES (
+    SOURCE.idCondicao,
+    SOURCE.idCondicaoNivel,
+    SOURCE.nuEntidade,
+    SOURCE.vrObjetivo,
+    SOURCE.vrRealizado,
+    SOURCE.icHabilitado,
+    SOURCE.dhAtualizacao
+)
+WHEN NOT MATCHED BY SOURCE AND TARGET.idCondicao IN (SELECT DISTINCT idCondicao FROM #RESULTADOS)
+THEN DELETE;
+
+DROP TABLE IF EXISTS #BASE_ANALITICO;
+DROP TABLE IF EXISTS #RESULTADOS;

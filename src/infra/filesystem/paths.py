@@ -2,34 +2,50 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.constants import REDES
-from core.domain.models import Campanha, GrupoProduto
+from app.constants import SUB_GRUPOS
+from core.domain.models import Registro, Categoria
 
 
-def criar_diretorio_campanha(path: Path) -> str:
-    path.mkdir(parents=True, exist_ok=True)
-    return str(path)
+def criar_diretorio(caminho_str: str) -> None:
+    caminho = Path(caminho_str)
+    caminho.mkdir(parents=True, exist_ok=True)
 
 
-def criar_diretorio_campanha_dev(base_path: Path, diretorio_nome_campanha: str) -> str:
-    caminho_diretorio = base_path / "templates" / diretorio_nome_campanha
-    caminho_diretorio.mkdir(parents=True, exist_ok=True)
-    return str(caminho_diretorio)
-
-
-def nome_campanha_diretorio(grupo_produto: GrupoProduto, campanha: Campanha) -> str:
-    segmento = next(
-        (key for key, value in REDES.items() if value == campanha.tipo_participante),
-        "segmento",
-    )
-    slug_segmento = (
-        segmento.strip().lower().replace(" ", "-").replace("(", "").replace(")", "")
-    )
-    return (
-        (
-            f"{grupo_produto.id_campanha}-programa-"
-            f"{grupo_produto.nome_grupo_produto}-{slug_segmento}"
-        )
-        .lower()
-        .strip()
-    )
+def nome_diretorio_registro(
+    categoria_vinculada: Categoria, registro_principal: Registro
+):
+    for chave, valor in SUB_GRUPOS.items():
+        if registro_principal.tipo_registro in (10, 12):
+            return (
+                (
+                    f"{categoria_vinculada.id_registro}-especial-"
+                    f"{categoria_vinculada.nome_categoria}-"
+                    f"{
+                        chave.strip()
+                        .lower()
+                        .replace(' ', '-')
+                        .replace('(', '')
+                        .replace(')', '')
+                        .replace('|', '-')
+                    }"
+                )
+                .lower()
+                .strip()
+            )
+        if valor == registro_principal.tipo_participante:
+            return (
+                (
+                    f"{categoria_vinculada.id_registro}-padrao-"
+                    f"{categoria_vinculada.nome_categoria}-"
+                    f"{
+                        chave.strip()
+                        .lower()
+                        .replace(' ', '-')
+                        .replace('(', '')
+                        .replace(')', '')
+                        .replace('|', '')
+                    }"
+                )
+                .lower()
+                .strip()
+            )

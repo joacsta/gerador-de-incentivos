@@ -1,238 +1,205 @@
-from __future__ import annotations
+import questionary
 
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from typing import Dict, List
 
 from app.commands.commands import (
     ask_descricao,
-    ask_nome_campanha,
-    ask_produto,
-    ask_rede,
-    ask_tipo_campanha,
-    ask_tipo_gatilho,
-    ask_tipo_premiacao,
-    ask_tipo_produtos,
-    ask_url_faixa,
-    ask_valor_decimal,
-    ask_valor_inteiro,
+    ask_categoria,
+    ask_grupo,
+    ask_tipo_registro,
+    ask_tipo_fonte,
+    ask_link_recurso,
 )
-from app.constants import (
-    EMPRESA_PRODUTO,
-    REDES,
-    TIPO_CAMPANHA,
-    TIPO_GATILHOS,
-    TIPO_PREMIACOES,
-)
-from app.services.calendar import seleciona_data
+from app.constants import VINCULO_CATEGORIA
+from app.services.calendar import selecionar_data
+
+from .commands import _build_attr_condicoes, _build_attr_niveis, _build_attr_retornos
 
 
-class Campanha:
-    def __init__(self) -> None:
-        nu_ano_mes, data_fim_apuracao = seleciona_data()
-        tipo_campanha = ask_tipo_campanha()
-        tipo_participante = ask_rede()
+@dataclass
+class Registro:
+    nome_registro: str
+    tipo_participante: int
+    id_registro: int | None
+    descricao: str
+    nu_ano_mes_inicio: int
+    nu_ano_mes_fim: int
+    url_recurso_a: str
+    url_recurso_b: str
+    tipo_registro: int
+    dt_processamento: date
 
-        self.id_campanha = None
-        self.nome_campanha = ask_nome_campanha()
-        self.descricao = ask_descricao()
-        self.nu_ano_mes_inicio = nu_ano_mes
-        self.nu_ano_mes_fim = nu_ano_mes
-        self.url_banner = ""
-        self.url_card = ""
-        self.tipo_campanha = int(TIPO_CAMPANHA[tipo_campanha])
-        self.dt_apuracao = data_fim_apuracao
-        self.tipo_participante = int(REDES[tipo_participante])
+    @classmethod
+    def create(cls) -> "Registro":
+        nome_registro_ = questionary.text("Qual o nome do novo registro? ").ask()
+        descricao_ = ask_descricao()
+        tipo_participante_ = ask_grupo(nome_registro_)
+        nu_ano_mes, data_fim_processamento = selecionar_data()
+        url_recurso_a_ = ask_link_recurso("principal")
+        url_recurso_b_ = ask_link_recurso("secundario")
+        tipo_registro_ = ask_tipo_registro()
 
-    @property
-    def values(self) -> dict:
+        return cls(
+            nome_registro=nome_registro_,
+            descricao=descricao_,
+            tipo_participante=tipo_participante_,
+            nu_ano_mes_inicio=nu_ano_mes,
+            nu_ano_mes_fim=nu_ano_mes,
+            url_recurso_a=url_recurso_a_,
+            url_recurso_b=url_recurso_b_,
+            tipo_registro=tipo_registro_,
+            dt_processamento=data_fim_processamento,
+            id_registro=None,
+        )
+
+    def values(self):
         return {
-            "noCampanha": self.nome_campanha,
-            "deCampanha": self.descricao,
+            "noRegistro": self.nome_registro,
+            "deRegistro": self.descricao,
             "nuAnoMesInicio": self.nu_ano_mes_inicio,
             "nuAnoMesFim": self.nu_ano_mes_fim,
-            "deImagemCampanha": self.url_banner,
-            "deLogoCampanha": "",
-            "deBackgroundCampanha": self.url_card,
+            "deImagemRecursoA": self.url_recurso_a,
+            "deLogoRegistro": "",
+            "deImagemRecursoB": self.url_recurso_b,
             "dhCriacao": datetime.now(),
             "dhAlteracao": datetime.now(),
-            "idSituacaoCampanha": 1,
-            "idTipoCampanha": self.tipo_campanha,
-            "icApuracaoMensal": 1,
-            "dtFimApuracao": self.dt_apuracao,
+            "idSituacaoRegistro": 1,
+            "idTipoRegistro": self.tipo_registro,
+            "icProcessamentoPeriodico": 1,
+            "dtFimProcessamento": self.dt_processamento,
             "idTipoParticipante": self.tipo_participante,
             "icEmAtualizacao": 0,
         }
 
 
-class GrupoProduto:
-    def __init__(self) -> None:
-        nome_grupo_produto = ask_produto()
-        tipo_produto = ask_tipo_produtos()
+@dataclass
+class Categoria:
+    id_categoria: int | None
+    id_registro: int | None
+    nome_categoria: str
+    tipo_fonte: int
+    vinculo_id: int
 
-        self.id_grupo_produto = None
-        self.id_campanha = None
-        self.nome_grupo_produto = nome_grupo_produto
-        self.tipo_produto = tipo_produto
-        self.empresa_id = EMPRESA_PRODUTO[nome_grupo_produto]
+    @classmethod
+    def create(cls):
+        nome_categoria_ = ask_categoria()
+        tipo_fonte_ = ask_tipo_fonte()
+        vinculo_id_ = VINCULO_CATEGORIA[nome_categoria_]
 
-    @property
-    def values(self) -> dict:
+        return cls(
+            id_categoria=None,
+            id_registro=None,
+            nome_categoria=nome_categoria_,
+            tipo_fonte=tipo_fonte_,
+            vinculo_id=vinculo_id_,
+        )
+
+    def values(self):
         return {
-            "idCampanha": self.id_campanha,
-            "noGrupoProduto": self.nome_grupo_produto,
-            "idTipoProduto": self.tipo_produto,
+            "idRegistro": self.id_registro,
+            "noCategoria": self.nome_categoria,
+            "idTipoFonte": self.tipo_fonte,
             "deIcone": "",
             "deCor": "",
-            "idEmpresa": self.empresa_id,
-            "idTipoApuracao": 1,
+            "idVinculo": self.vinculo_id,
+            "idTipoProcessamento": 1,
             "nuOrdemApresentacao": 0,
         }
 
 
-class Premiacao:
-    def __init__(self, nu_ano_mes: int, quantidade_premiacoes: int = 1) -> None:
-        self.id_campanha = None
-        self.id_grupo_produto = None
-        self.lista_premiacoes = []
-        for premiacao in range(quantidade_premiacoes):
-            print(f"{premiacao + 1}ª recompensa: ")
-            tipo_premiacao = ask_tipo_premiacao()
-            id_tipo_premiacao = int(TIPO_PREMIACOES[tipo_premiacao])
-            vr_premiacao = ask_valor_decimal(
-                f"Insira o valor da {premiacao + 1}ª recompensa (somente números):"
-            )
-            descricao_premiacao = input(
-                f"Insira o nome da {premiacao + 1}ª recompensa: "
-            )
-            vr_objetivo_premiacao = ask_valor_decimal(
-                f"Insira o valor do objetivo da {premiacao + 1}ª recompensa:"
-            )
-            nu_qtd_limite_premiacao = ask_valor_inteiro(
-                f"Insira quantas unidades a {premiacao + 1}ª recompensa possui:"
-            )
-            coluna_premiacao = {
-                "dePremiacao": descricao_premiacao,
-                "nuAnoMes": nu_ano_mes,
-                "noTipoUnidade": None,
-                "noTipoRede": None,
-                "nuPorteUnidade": None,
-                "vrPremiacao": vr_premiacao,
-                "vrObjetivoPremiacao": vr_objetivo_premiacao,
-                "idTipoPremiacao": id_tipo_premiacao,
-                "nuQtdLimitePremiacao": nu_qtd_limite_premiacao,
-                "deImgPremiacao": "",
-                "idCampanha": self.id_campanha,
-                "idGrupoProdutoCampanha": self.id_grupo_produto,
-            }
-            self.lista_premiacoes.append(coluna_premiacao)
+@dataclass
+class Retorno:
+    nu_ano_mes: int
+    quantidade_retornos: int = 1
+    lista_retornos: List[Dict] = field(default_factory=list)
+    id_registro: int | None = None
+    id_categoria: int | None = None
 
-    def set_id_grupo_produto(self, id_grupo_produto: int) -> None:
-        self.id_grupo_produto = id_grupo_produto
-        for premiacao in self.lista_premiacoes:
-            premiacao["idGrupoProdutoCampanha"] = id_grupo_produto
+    @classmethod
+    def build(cls, nu_ano_mes: int, quantidade_retornos: int = 1) -> "Retorno":
+        return cls(
+            nu_ano_mes=nu_ano_mes,
+            quantidade_retornos=quantidade_retornos,
+            lista_retornos=_build_attr_retornos(
+                nu_ano_mes, None, None, quantidade_retornos
+            ),
+        )
 
-    def reset_id_campanha(self) -> None:
-        for premiacao in self.lista_premiacoes:
-            premiacao["idCampanha"] = None
+    def reset_id_registro(self):
+        for retorno in self.lista_retornos:
+            retorno["idRegistro"] = None
 
-    def reset_id_grupo_produto(self) -> None:
-        for premiacao in self.lista_premiacoes:
-            premiacao["idGrupoProdutoCampanha"] = None
+    def reset_id_categoria(self):
+        for retorno in self.lista_retornos:
+            retorno["idCategoriaVinculada"] = None
 
-    def set_id_campanha(self, id_campanha: int) -> None:
-        self.id_campanha = id_campanha
-        for premiacao in self.lista_premiacoes:
-            premiacao["idCampanha"] = id_campanha
+    def set_id_registro(self, idRegistro: int):
+        self.id_registro = idRegistro
+        for retorno in self.lista_retornos:
+            retorno["idRegistro"] = idRegistro
 
-    @property
-    def values(self) -> list[dict]:
-        return self.lista_premiacoes
+    def set_id_categoria(self, idCategoriaVinculada: int):
+        self.id_categoria = idCategoriaVinculada
+        for retorno in self.lista_retornos:
+            retorno["idCategoriaVinculada"] = idCategoriaVinculada
+
+    def values(self):
+        return self.lista_retornos
 
 
-class Gatilho:
-    def __init__(
-        self,
-        dicionario_grupo_produto: dict,
-        nu_ano_mes: int,
-        quantidade_gatilhos: int = 1,
-    ) -> None:
-        self.lista_gatilhos = []
-        self.id_campanha = None
-        self.nome_produto = dicionario_grupo_produto["noGrupoProduto"]
-        for gatilhos in range(quantidade_gatilhos):
-            print(f"{gatilhos + 1}ª meta:")
-            tipo_gatilho = ask_tipo_gatilho()
-            id_tipo_gatilho = int(TIPO_GATILHOS[tipo_gatilho])
-            ic_apuracao_valor = True if id_tipo_gatilho in (1, 3, 6) else False
-            coluna_gatilhos = (
-                {
-                    "idCampanha": self.id_campanha,
-                    "noGatilho": f"Badges - {self.nome_produto}",
-                    "deGatilho": f"Badges {self.nome_produto} - {nu_ano_mes}",
-                    "noCampoGatilho": "icAtingido",
-                    "nuAnoMes": nu_ano_mes,
-                    "icExibido": False,
-                    "icObrigatorio": True,
-                    "vrRealizadoGlobal": None,
-                    "icApuracaoValor": ic_apuracao_valor,
-                    "idTipoGatilho": id_tipo_gatilho,
-                }
-                if id_tipo_gatilho == 6
-                else {
-                    "idCampanha": self.id_campanha,
-                    "noGatilho": f"Meta - {self.nome_produto}",
-                    "deGatilho": f"Meta {self.nome_produto} - {nu_ano_mes}",
-                    "noCampoGatilho": "icAtingido",
-                    "nuAnoMes": nu_ano_mes,
-                    "icExibido": False,
-                    "icObrigatorio": True,
-                    "vrRealizadoGlobal": None,
-                    "icApuracaoValor": ic_apuracao_valor,
-                    "idTipoGatilho": id_tipo_gatilho,
-                }
-            )
-            self.lista_gatilhos.append(coluna_gatilhos)
+@dataclass
+class Condicao:
+    dicionario_categoria: dict
+    nu_ano_mes: int
+    quantidade_condicoes: int = 1
+    lista_condicoes: List[Dict] = field(default_factory=list)
+    id_registro: int | None = None
 
-    def reset_id_campanha(self) -> None:
-        for gatilho in self.lista_gatilhos:
-            gatilho["idCampanha"] = None
+    @classmethod
+    def build(
+        cls, nu_ano_mes: int, quantidade_condicoes: int, dicionario_categoria: dict
+    ) -> "Condicao":
+        return cls(
+            dicionario_categoria=dicionario_categoria,
+            nu_ano_mes=nu_ano_mes,
+            quantidade_condicoes=quantidade_condicoes,
+            lista_condicoes=_build_attr_condicoes(
+                None, nu_ano_mes, dicionario_categoria, quantidade_condicoes
+            ),
+        )
 
-    def set_id_campanha(self, id_campanha: int) -> None:
-        self.id_campanha = id_campanha
-        for gatilho in self.lista_gatilhos:
-            gatilho["idCampanha"] = id_campanha
+    def reset_id_registro(self):
+        for condicao in self.lista_condicoes:
+            condicao["idRegistro"] = None
 
-    @property
-    def values(self) -> list[dict]:
-        return self.lista_gatilhos
+    def set_id_registro(self, idRegistro: int):
+        self.id_registro = idRegistro
+        for condicao in self.lista_condicoes:
+            condicao["idRegistro"] = idRegistro
+
+    def values(self):
+        return self.lista_condicoes
 
 
-class GatilhosNivel:
-    def __init__(self, lista_premiacoes: list[dict]):
-        self.lista_gatilho_nivel = []
-        self.id_gatilho: int | None = None
+@dataclass
+class CondicaoNivel:
+    lista_retornos: List[Dict]
+    lista_niveis: List[Dict] = field(default_factory=list)
 
-        for index_premiacao, premiacao in enumerate(lista_premiacoes, start=1):
-            de_premiacao = premiacao.get("dePremiacao", "")
-            vr_objetivo = premiacao.get("vrObjetivoPremiacao")
-            nu_qtd_limite = premiacao.get("nuQtdLimitePremiacao")
-            gatilho_nivel = {
-                "nuNivel": index_premiacao,
-                "deNivel": de_premiacao,
-                "vrNivel": vr_objetivo,
-                "nuQtdLimite": nu_qtd_limite,
-                "icObrigatorio": 1 if index_premiacao == 1 else 0,
-                "dhAtualizacao": datetime.now(),
-                "deImgPremiacao": ask_url_faixa(index_premiacao),
-                "dePremiacao": "",
-            }
-            self.lista_gatilho_nivel.append(gatilho_nivel)
+    @classmethod
+    def build(cls, lista_retornos: list):
+        return cls(
+            lista_retornos=lista_retornos,
+            lista_niveis=_build_attr_niveis(lista_retornos),
+        )
 
-    def reset_id_gatilho(self, index: int) -> None:
-        self.lista_gatilho_nivel[index]["idGatilho"] = None
+    def reset_id_condicao(self, index):
+        self.lista_niveis[index]["idCondicao"] = None
 
-    def set_id_gatilho(self, index: int, id_gatilho: int | None) -> None:
-        self.lista_gatilho_nivel[index]["idGatilho"] = id_gatilho
+    def set_id_condicao(self, index: int, idCondicao: int):
+        self.lista_niveis[index]["idCondicao"] = idCondicao
 
-    @property
-    def values(self) -> list[dict]:
-        return self.lista_gatilho_nivel
+    def values(self):
+        return self.lista_niveis
