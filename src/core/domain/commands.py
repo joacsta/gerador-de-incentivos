@@ -100,7 +100,7 @@ def _build_attr_niveis(lista_retornos: list):
                 "deNivel": de_retorno,
                 "vrNivel": vr_objetivo,
                 "nuQtdLimite": nu_qtd_limite,
-                "icObrigatorio": 1 if i == 1 else 0,
+                "icObrigatorio": True if i == 1 else False,
                 "dhAtualizacao": datetime.now(),
                 "deImgNivel": ask_link_nivel(i),
                 "deRetorno": "",

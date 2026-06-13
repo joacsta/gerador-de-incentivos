@@ -117,7 +117,6 @@ def ask_tipo_condicao() -> int:
 
 
 def ask_valor_decimal(pergunta: str, tipo_retorno: int = 1) -> float:
-
     if tipo_retorno != 1:
         return 0.0
 
@@ -140,10 +139,8 @@ def ask_valor_inteiro(pergunta: str) -> int | None:
     return int(valor)
 
 
-def converter_para_inteiro(texto: str) -> int | None:
-    if texto.isnumeric():
-        return int(texto)
-    return None
+def converter_para_inteiro(texto: str) -> int:
+    return int(texto)
 
 
 def ask_booleano(pergunta: str) -> bool:
@@ -151,15 +148,20 @@ def ask_booleano(pergunta: str) -> bool:
 
 
 def ask_parametros_inicializacao() -> tuple[int, int]:
-    quantidade_retornos = ask_valor_inteiro(
-        "Quantos retornos serão disponibilizados? (insira números inteiros): "
-    )
+    quantidade_retornos = 1
+    quantidade_condicoes = 1
+
+    mais_retornos = questionary.confirm(
+        "Este registro possui mais de um retorno atrelado?"
+    ).ask()
+
+    if mais_retornos:
+        resposta = ask_valor_inteiro("Quantos retornos serão associados ao registro? ")
+        quantidade_retornos = resposta if resposta else 1
+
     mais_condicoes = questionary.confirm(
         "Este registro possui mais de uma condição atrelada?"
     ).ask()
-
-    quantidade_retornos = quantidade_retornos if quantidade_retornos else 1
-    quantidade_condicoes = 1
 
     if mais_condicoes:
         resposta = ask_valor_inteiro("Quantas condições serão associadas ao registro? ")
@@ -169,24 +171,22 @@ def ask_parametros_inicializacao() -> tuple[int, int]:
 
 
 def ask_periodo_especifico() -> int | None:
-
-    reposta_usuario = questionary.confirm(
+    resposta = questionary.confirm(
         "Deseja selecionar um mês específico para o processamento?"
     ).ask()
 
-    if not reposta_usuario:
-        return None
-
-    mes_escolhido = questionary.select(
-        "Selecione o mês: ",
-        choices=list(MESES.keys()),
-    ).ask()
-    return int(MESES[mes_escolhido])
+    if resposta:
+        mes_escolhido = questionary.select(
+            "Selecione o mês: ", choices=list(MESES.keys()), show_selected=True
+        ).ask()
+        return int(MESES[mes_escolhido])
+    return None
 
 
 def ask_modelo_processamento() -> str:
     escolha = questionary.select(
         "Selecione o modelo de processamento:",
         choices=list(MODELOS_PROCESSAMENTO.keys()),
+        show_selected=True,
     ).ask()
     return MODELOS_PROCESSAMENTO[escolha]

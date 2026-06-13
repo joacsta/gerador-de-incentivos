@@ -43,7 +43,7 @@ def fluxo_processamento() -> None:
             servidor.alterar_conexao
             novo_motor = servidor.conectar()
 
-            configuracao_criada.reset_pks
+            configuracao_criada.reset_pks()
             executar_configuracao(configuracao_criada, novo_motor)
 
             nova_query, novos_parametros = processamento.selecionar_modelo(
@@ -67,7 +67,7 @@ def fluxo_configuracao() -> None:
             servidor.alterar_conexao
             novo_motor = servidor.conectar()
 
-            configuracao_criada.reset_pks
+            configuracao_criada.reset_pks()
             executar_configuracao(configuracao_criada, novo_motor)
 
 

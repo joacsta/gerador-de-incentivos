@@ -6,7 +6,14 @@ import questionary
 
 from app.commands.commands import converter_para_inteiro
 from app.constants import TIPOS_CONDICOES
-from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro, Retorno
+from core.domain.models import (
+    Categoria,
+    Condicao,
+    CondicaoNivel,
+    Registro,
+    Retorno,
+    idCondicaoNiveis,
+)
 from infra.db.repositories import insert_statement
 from infra.db.tables import (
     table_categoria,
@@ -64,7 +71,6 @@ class Configuracao:
             self.condicoes_nivel.values(),
         ]
 
-    @property
     def reset_pks(self):
         self.registro_principal.id_registro = None
 
@@ -80,7 +86,8 @@ class Configuracao:
             self.condicoes_nivel.reset_id_condicao(index)
 
     def insert_data(self, motor):
-        id_condicoes = list()
+        id_condicoes = []
+
         with motor.begin() as conn:
             try:
                 idRegistro = insert_statement(
@@ -95,50 +102,42 @@ class Configuracao:
 
                 for retorno in self.retornos.values():
                     insert_statement(conn, table_retorno(), retorno)
+
                 self.condicoes.set_id_registro(idRegistro)
 
                 for condicao in self.condicoes.values():
                     idCondicao = insert_statement(conn, table_condicao(), condicao)
-                    id_condicao = (
-                        idCondicao,
-                        (
-                            next(
-                                (
-                                    key
-                                    for key, value in TIPOS_CONDICOES.items()
-                                    if value == condicao["idTipoCondicao"]
-                                ),
-                                None,
-                            )
+                    id_condicao = idCondicaoNiveis(
+                        id_condicao=idCondicao,
+                        descricao_condicao=next(
+                            key
+                            for key, value in TIPOS_CONDICOES.items()
+                            if value == condicao["idTipoCondicao"]
                         ),
                     )
-                    id_condicoes.append(id_condicao)
 
-                if len(self.condicoes.values()) == 1:
-                    for index, condicao_nivel in enumerate(
-                        self.condicoes_nivel.values()
-                    ):
-                        self.condicoes_nivel.set_id_condicao(index, id_condicoes[0][0])
-                        insert_statement(conn, table_condicao_nivel(), condicao_nivel)
-                else:
-                    lista_id_condicoes = [
-                        str(condicao_nivel) for condicao_nivel in id_condicoes
-                    ]
-                    for index_condicao, condicao_nivel in enumerate(
-                        self.condicoes_nivel.values()
-                    ):
-                        id_condicao_selecionado = questionary.select(
-                            f"Selecione a Condição (id) que o nível {index_condicao + 1} será associado:",
+                    id_condicoes.append(
+                        tuple(valor for valor in id_condicao._asdict().values())
+                    )
+
+                if len(self.condicoes.values()) > 1:
+                    lista_id_condicoes = [str(nivel) for nivel in id_condicoes]
+                    for i, nivel in enumerate(self.condicoes_nivel.values()):
+                        id_selecionado = questionary.select(
+                            f"Selecione a Condição (id) que o nível {i + 1} será associado:",
                             choices=lista_id_condicoes,
                             show_selected=True,
                         ).ask()
-                        numero_id_condicao = converter_para_inteiro(
-                            id_condicao_selecionado
-                        )
+
                         self.condicoes_nivel.set_id_condicao(
-                            index_condicao, numero_id_condicao
+                            i, converter_para_inteiro(id_selecionado)
                         )
-                        insert_statement(conn, table_condicao_nivel(), condicao_nivel)
+                        insert_statement(conn, table_condicao_nivel(), nivel)
+
+                for i, nivel in enumerate(self.condicoes_nivel.values()):
+                    self.condicoes_nivel.set_id_condicao(i, id_condicoes[0][0])
+                    insert_statement(conn, table_condicao_nivel(), nivel)
+
             except Exception as e:
                 print("Erro ao inserir dados: ", e)
                 print("Abortando execução")

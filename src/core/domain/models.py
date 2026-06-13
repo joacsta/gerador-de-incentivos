@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Dict, List
+from typing import Dict, List, NamedTuple
 
 import questionary
 
@@ -203,3 +203,8 @@ class CondicaoNivel:
 
     def values(self):
         return self.lista_niveis
+
+
+class idCondicaoNiveis(NamedTuple):
+    id_condicao: int
+    descricao_condicao: str

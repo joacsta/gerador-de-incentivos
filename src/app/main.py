@@ -1,7 +1,7 @@
 from .menu import menu
 
 
-def main():
+def main() -> None:
     menu()
     return
 

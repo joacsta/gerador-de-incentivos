@@ -20,10 +20,7 @@ def obter_caminho_producao(periodo: int, diretorio: str) -> str:
     )
 
 
-OPCOES_USUARIO = [
-    "1) Gerar nova configuração e processamento",
-    "2) Gerar nova configuração",
-]
+OPCOES_USUARIO = ["1) Gerar novo processamento", "2) Gerar nova configuração"]
 OPCOES_GRUPOS = ["Grupo A", "Grupo B", "Grupo C"]
 
 CATEGORIAS = {

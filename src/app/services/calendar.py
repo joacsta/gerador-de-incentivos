@@ -40,18 +40,22 @@ def selecionar_data():
 
     if data_especificada:
         calendario = CalendarioEspecificoRegistro(data_especificada)
-        periodo_registro_mes_especifico = calendario.data_fim_periodo_registro
-        calendario_dias_uteis_mes_especifico = calendario.dias_uteis(
-            periodo_registro_mes_especifico
-        )
+        mes_especifico = calendario.data_fim_periodo_registro
+        calendario_dias_uteis_mes_especifico = calendario.dias_uteis(mes_especifico)
+
         fim_processamento = calendario_dias_uteis_mes_especifico[9]
+        # regra de negocio: fim do processamento ser 8 dias uteis apos o fim do processamento
+
         nu_ano_mes_especifico = calendario.nu_ano_mes
         return nu_ano_mes_especifico, fim_processamento
 
     calendario = CalendarioRegistro()
     periodo_registro = calendario.data_fim_periodo_registro
     calendario_dias_uteis = calendario.dias_uteis(periodo_registro)
+
     fim_processamento = calendario_dias_uteis[9]
+    # regra de negocio: fim do processamento ser 8 dias uteis apos o fim do processamento
+
     nu_ano_mes = calendario.nu_ano_mes
 
     return nu_ano_mes, fim_processamento
