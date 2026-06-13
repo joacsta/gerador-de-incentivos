@@ -9,8 +9,8 @@ import questionary
 from app.commands.commands import ask_booleano
 from app.config import AMBIENTE_PRINCIPAL, AMBIENTE_TESTE
 from app.constants import OPCOES_USUARIO
+from app.services.configuracao import configuracao_main, executar_configuracao
 from app.services.processamento import processamento_main
-from app.services.configuracao import executar_configuracao, configuracao_main
 from infra.db.conn import servidor
 
 
@@ -25,7 +25,7 @@ def sair() -> None:
 
 
 def fluxo_processamento() -> None:
-    motor = servidor.conectar
+    motor = servidor.conectar()
     configuracao_criada = configuracao_main(motor)
     processamento = processamento_main(
         configuracao_criada.categoria_vinculada,
@@ -41,7 +41,7 @@ def fluxo_processamento() -> None:
         )
         if replicar:
             servidor.alterar_conexao
-            novo_motor = servidor.conectar
+            novo_motor = servidor.conectar()
 
             configuracao_criada.reset_pks
             executar_configuracao(configuracao_criada, novo_motor)
@@ -56,7 +56,7 @@ def fluxo_processamento() -> None:
 
 
 def fluxo_configuracao() -> None:
-    motor = servidor.conectar
+    motor = servidor.conectar()
     configuracao_criada = configuracao_main(motor)
 
     if servidor.nome_servidor == AMBIENTE_TESTE:
@@ -65,7 +65,7 @@ def fluxo_configuracao() -> None:
         )
         if replicar:
             servidor.alterar_conexao
-            novo_motor = servidor.conectar
+            novo_motor = servidor.conectar()
 
             configuracao_criada.reset_pks
             executar_configuracao(configuracao_criada, novo_motor)

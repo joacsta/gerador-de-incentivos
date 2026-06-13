@@ -6,13 +6,13 @@ import questionary
 
 from app.commands.commands import converter_para_inteiro
 from app.constants import TIPOS_CONDICOES
-from core.domain.models import Registro, Condicao, CondicaoNivel, Categoria, Retorno
+from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro, Retorno
 from infra.db.repositories import insert_statement
 from infra.db.tables import (
-    table_registro,
+    table_categoria,
     table_condicao,
     table_condicao_nivel,
-    table_categoria,
+    table_registro,
     table_retorno,
 )
 

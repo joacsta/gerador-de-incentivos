@@ -1,5 +1,6 @@
-from os import getenv
 from argparse import ArgumentParser
+from os import getenv
+
 from dotenv import load_dotenv
 
 load_dotenv()

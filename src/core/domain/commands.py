@@ -3,9 +3,9 @@ from datetime import datetime
 import questionary
 
 from app.commands.commands import (
+    ask_link_nivel,
     ask_tipo_condicao,
     ask_tipo_retorno,
-    ask_link_nivel,
     ask_valor_decimal,
     ask_valor_inteiro,
 )

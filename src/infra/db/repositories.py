@@ -1,5 +1,6 @@
-from sqlalchemy import Engine, Table, select, insert
+from sqlalchemy import Engine, Table, insert, select
 
+from infra.db.conn import metadata, servidor
 from infra.db.tables import table_categoria
 
 
@@ -16,3 +17,15 @@ def select_statement_categoria(id_registro, motor: Engine):
             table.c["idRegistro"] == id_registro
         )
         return conn.execute(statement).scalar_one_or_none()
+
+
+def select_stmt_registros():
+    motor = servidor.conectar()
+    tabela_usuario = Table(
+        "tblRegistro", metadata=metadata, autoload_with=motor, schema="ModuloPrincipal"
+    )
+    return (
+        select(tabela_usuario)
+        .order_by(tabela_usuario.columns.idRegistro.desc())
+        .limit(10)
+    )

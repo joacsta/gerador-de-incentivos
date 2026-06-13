@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.config import AMBIENTE_TESTE
 from app.constants import obter_caminho_producao, obter_caminho_rascunho
-from core.domain.models import Registro, Categoria
+from core.domain.models import Categoria, Registro
 from infra.db.conn import servidor
 from infra.filesystem.paths import criar_diretorio, nome_diretorio_registro
 

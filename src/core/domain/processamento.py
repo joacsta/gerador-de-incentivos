@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from core.domain.models import Registro, Condicao, CondicaoNivel, Categoria
+from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro
 from infra.db.conn import servidor
 from infra.filesystem.writer import gerar_script_processamento
-from templates.jinja_builder import selecionar_template, parametros_template
+from templates.jinja_builder import parametros_template, selecionar_template
 
 
 class Processamento:

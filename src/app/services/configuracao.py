@@ -2,8 +2,8 @@ import questionary
 from sqlalchemy import Engine
 
 from app.commands.commands import ask_parametros_inicializacao
-from core.domain.models import Registro, Condicao, CondicaoNivel, Categoria, Retorno
 from core.domain.configuracao import Configuracao
+from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro, Retorno
 from infra.db.conn import servidor
 
 

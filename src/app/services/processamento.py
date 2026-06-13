@@ -1,7 +1,7 @@
 from sqlalchemy import Engine
 
+from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro
 from core.domain.processamento import Processamento
-from core.domain.models import Registro, Condicao, CondicaoNivel, Categoria
 
 
 def processamento_main(

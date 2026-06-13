@@ -1,16 +1,16 @@
-import questionary
-
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Dict, List
 
+import questionary
+
 from app.commands.commands import (
-    ask_descricao,
     ask_categoria,
+    ask_descricao,
     ask_grupo,
-    ask_tipo_registro,
-    ask_tipo_fonte,
     ask_link_recurso,
+    ask_tipo_fonte,
+    ask_tipo_registro,
 )
 from app.constants import VINCULO_CATEGORIA
 from app.services.calendar import selecionar_data

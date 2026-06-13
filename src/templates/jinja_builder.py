@@ -7,9 +7,10 @@ from questionary import select
 
 from app.commands.commands import ask_modelo_processamento
 from app.constants import CATEGORIAS
-from core.domain.models import Condicao, CondicaoNivel, Categoria
+from core.domain.models import Categoria, Condicao, CondicaoNivel
 from infra.db.conn import servidor
 from infra.db.repositories import select_statement_categoria
+
 
 DIRETORIO_TEMPLATES = Path(__file__).parent / ".sql"
 
@@ -49,7 +50,7 @@ def parametros_template(
 
     processamento_entidades = carregar_template("metodo_ramificacao")
     jinja = JinjaSql()
-    motor = servidor.conectar
+    motor = servidor.conectar()
 
     if len(condicoes.lista_condicoes) > 1:
         print("\nRevise os ID's após a geração do processamento.\n")

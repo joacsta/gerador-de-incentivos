@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.constants import SUB_GRUPOS
-from core.domain.models import Registro, Categoria
+from core.domain.models import Categoria, Registro
 
 
 def criar_diretorio(caminho_str: str) -> None:
