@@ -6,7 +6,7 @@ Um utilitário de linha de comando para configurar programas de incentivo/campan
 # gerador-de-incentivos
 CLI para criar programas de incentivo e gerar/executar apurações no SQL Server.
 O fluxo é guiado por perguntas e grava os dados das campanhas nas tabelas
-do schema Campanha, além de gerar scripts SQL via templates Jinja.
+do schema selecionado, além de gerar scripts SQL via templates Jinja.
 
 ## Requisitos
 - Python 3.10+
@@ -28,8 +28,8 @@ PYTHONPATH=src python -m app.main --prod   # aponta para PROD
 
 ## Saídas geradas
 
-- **STAGE**: `output/drafts/templates/<campanha>/rascunho-apuracao.sql`
-- **PROD**: `output/programas/<AAAAMM>/<campanha>/apuracao.sql`
+- **STAGE**: `output/drafts/templates/<diretorio>/rascunho-apuracao.sql`
+- **PROD**: `output/programas/<AAAAMM>/<diretorio>/apuracao.sql`
 
 ## Templates de apuração
 
