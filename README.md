@@ -35,9 +35,3 @@ PYTHONPATH=src python -m app.main --prod   # aponta para PROD
 
 - Arquivos em `src/templates/.sql/*.j2`
 - Os nomes exibidos no menu estão em `app/constants.py`
-
-## Banco de dados
-
-Tabelas esperadas (schema `Campanha`):
-`tblCampanha`, `tblGrupoProdutoCampanha`, `tblPremiacao`,
-`tblCampanhaGatilho`, `tblCampanhaGatilhoNivel`.
