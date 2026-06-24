@@ -7,7 +7,7 @@ from app.constants.constants import (
     TIPOS_RETORNOS,
 )
 from app.constants.enums import (
-    Categoria,
+    CategoriaEnum,
     ModeloProcessamento,
     SubGrupos,
     TipoCondicoes,
@@ -17,7 +17,7 @@ from app.constants.enums import (
 
 def ask_categoria() -> str:
     return q.select(
-        "Qual categoria o registro atual promove?", [c.label for c in Categoria]
+        "Qual categoria o registro atual promove?", [c.label for c in CategoriaEnum]
     ).ask()
 
 
