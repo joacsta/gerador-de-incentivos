@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from pyodbc import drivers
 from sqlalchemy import MetaData, create_engine
 
-from app.config import AMBIENTE_PRINCIPAL, AMBIENTE_TESTE, obter_argumentos
+from app.config import AMBIENTE_TESTE, obter_argumentos
+
 
 nome_servidor, nome_banco = obter_argumentos()
 metadata = MetaData()
@@ -23,12 +24,6 @@ class Servidor:
             "Trusted_Connection=yes;",
             echo=True,
         )
-
-    def alterar_conexao(self):
-        self.nome_servidor = AMBIENTE_PRINCIPAL
-
-    def servidor_atual(self):
-        print(f"Servidor Atual: {self.nome_servidor}")
 
 
 servidor = Servidor(nome_servidor, nome_banco)

@@ -8,7 +8,7 @@ import questionary
 
 from app.commands.commands import ask_booleano
 from app.config import AMBIENTE_PRINCIPAL, AMBIENTE_TESTE
-from app.constants import OPCOES_USUARIO
+from app.constants.constants import OPCOES_USUARIO
 from app.services.configuracao import configuracao_main, executar_configuracao
 from app.services.processamento import processamento_main
 from infra.db.conn import servidor
@@ -40,7 +40,7 @@ def fluxo_processamento() -> None:
             f"Deseja inserir este mesmo registro no ambiente principal ({AMBIENTE_PRINCIPAL})?"
         )
         if replicar:
-            servidor.alterar_conexao
+            servidor.nome_servidor = AMBIENTE_PRINCIPAL
             novo_motor = servidor.conectar()
 
             configuracao_criada.reset_pks()
@@ -64,7 +64,7 @@ def fluxo_configuracao() -> None:
             f"Deseja inserir estes mesmos dados no ambiente principal ({AMBIENTE_PRINCIPAL})?"
         )
         if replicar:
-            servidor.alterar_conexao
+            servidor.nome_servidor = AMBIENTE_PRINCIPAL
             novo_motor = servidor.conectar()
 
             configuracao_criada.reset_pks()

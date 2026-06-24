@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import questionary
+import questionary as q
 
 from app.commands.commands import (
     ask_link_nivel,
@@ -11,7 +11,7 @@ from app.commands.commands import (
 )
 
 
-def _build_attr_retornos(
+def build_attr_retornos(
     nu_ano_mes: int,
     id_registro: int | None,
     id_categoria: int | None,
@@ -20,14 +20,14 @@ def _build_attr_retornos(
     lista = []
 
     for i in range(quantidade_retornos):
-        questionary.print(f"{i + 1}º retorno", style="bold")
+        q.print(f"{i + 1}º retorno", style="bold")
 
         id_tipo_retorno = ask_tipo_retorno()
         vr_retorno = ask_valor_decimal(
             f"Insira o valor do {i + 1}º retorno do registro (valor a ser computado):",
             id_tipo_retorno,
         )
-        descricao_retorno = questionary.text(
+        descricao_retorno = q.text(
             f"Qual o nome do {i + 1}º retorno do registro? "
         ).ask()
         vr_objetivo_retorno = ask_valor_decimal(
@@ -55,7 +55,7 @@ def _build_attr_retornos(
     return lista
 
 
-def _build_attr_condicoes(
+def build_attr_condicoes(
     id_registro: int | None,
     nu_ano_mes: int,
     dicionario: dict,
@@ -64,7 +64,7 @@ def _build_attr_condicoes(
     lista = []
 
     for i in range(quantidade_condicoes):
-        questionary.print(f"{i + 1}º condição:", style="bold")
+        q.print(f"{i + 1}º condição:", style="bold")
         tipo_condicao = ask_tipo_condicao()
         nome_base = ("Modelo Especial") if tipo_condicao == 6 else "Modelo Padrão"
         grupo = dicionario["noCategoria"]
@@ -86,7 +86,7 @@ def _build_attr_condicoes(
     return lista
 
 
-def _build_attr_niveis(lista_retornos: list):
+def build_attr_niveis(lista_retornos: list):
     lista = []
 
     for i, retorno in enumerate(lista_retornos, start=1):

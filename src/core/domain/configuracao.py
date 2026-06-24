@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pprint import pprint
 
-import questionary
+import questionary as q
 
 from app.commands.commands import converter_para_inteiro
-from app.constants import TIPOS_CONDICOES
+from app.constants.enums import TipoCondicoes
 from core.domain.models import (
     Categoria,
     Condicao,
@@ -49,7 +49,7 @@ class Configuracao:
             ("---tblRegistroCondicaoNivel---", self.condicoes_nivel.values()),
         ]
         for titulo, preview in previews:
-            questionary.print(f"\n{titulo}\n")
+            q.print(f"\n{titulo}\n")
             pprint(preview)
             resposta = input("\nContinuar? [s]im, [n]ão ou [p]ular preview: ")
 
@@ -87,31 +87,41 @@ class Configuracao:
 
     def insert_data(self, motor):
         id_condicoes = []
+        tipos_condicoes = {tp.name: tp.value for tp in TipoCondicoes}
+
+        tbl_reg = table_registro()
+        tbl_cat = table_categoria()
+        tbl_ret = table_retorno()
+        tbl_cond = table_condicao()
+        tbl_cond_nivel = table_condicao_nivel()
+
+        values_reg = self.registro_principal.values()
+        values_cat = self.categoria_vinculada.values()
+        values_retorno = self.retornos.values()
+        values_condicao = self.condicoes.values()
+        values_condicao_n = self.condicoes_nivel.values()
 
         with motor.begin() as conn:
             try:
-                idRegistro = insert_statement(
-                    conn, table_registro(), self.registro_principal.values()
-                )
+                idRegistro = insert_statement(conn, tbl_reg, values_reg)
+                idCategoriaVinculada = insert_statement(conn, tbl_cat, values_cat)
+
                 self.categoria_vinculada.id_registro = idRegistro
-                idCategoriaVinculada = insert_statement(
-                    conn, table_categoria(), self.categoria_vinculada.values()
-                )
                 self.retornos.set_id_registro(idRegistro)
                 self.retornos.set_id_categoria(idCategoriaVinculada)
 
-                for retorno in self.retornos.values():
-                    insert_statement(conn, table_retorno(), retorno)
+                for retorno in values_retorno:
+                    insert_statement(conn, tbl_ret, retorno)
 
                 self.condicoes.set_id_registro(idRegistro)
 
-                for condicao in self.condicoes.values():
-                    idCondicao = insert_statement(conn, table_condicao(), condicao)
+                for condicao in values_condicao:
+                    idCondicao = insert_statement(conn, tbl_cond, condicao)
                     id_condicao = idCondicaoNiveis(
                         id_condicao=idCondicao,
                         descricao_condicao=next(
                             key
-                            for key, value in TIPOS_CONDICOES.items()
+                            for key, value in tipos_condicoes.items()
                             if value == condicao["idTipoCondicao"]
                         ),
                     )
@@ -123,7 +133,7 @@ class Configuracao:
                 if len(self.condicoes.values()) > 1:
                     lista_id_condicoes = [str(nivel) for nivel in id_condicoes]
                     for i, nivel in enumerate(self.condicoes_nivel.values()):
-                        id_selecionado = questionary.select(
+                        id_selecionado = q.select(
                             f"Selecione a Condição (id) que o nível {i + 1} será associado:",
                             choices=lista_id_condicoes,
                             show_selected=True,
@@ -132,9 +142,9 @@ class Configuracao:
                         self.condicoes_nivel.set_id_condicao(
                             i, converter_para_inteiro(id_selecionado)
                         )
-                        insert_statement(conn, table_condicao_nivel(), nivel)
+                        insert_statement(conn, tbl_cond_nivel, nivel)
 
-                for i, nivel in enumerate(self.condicoes_nivel.values()):
+                for i, nivel in enumerate(values_condicao_n):
                     self.condicoes_nivel.set_id_condicao(i, id_condicoes[0][0])
                     insert_statement(conn, table_condicao_nivel(), nivel)
 
@@ -144,10 +154,4 @@ class Configuracao:
                 raise e
 
         print("Dados inseridos com sucesso.")
-        return (
-            self.registro_principal,
-            self.categoria_vinculada,
-            self.retornos,
-            self.condicoes,
-            self.condicoes_nivel,
-        )
+        return

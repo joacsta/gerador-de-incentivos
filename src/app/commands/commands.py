@@ -1,34 +1,35 @@
-import questionary
+import questionary as q
 
-from app.constants import (
-    CATEGORIAS,
+from app.constants.constants import (
     DESCRICOES_PADRAO,
     MESES,
-    MODELOS_PROCESSAMENTO,
     OPCOES_GRUPOS,
-    SUB_GRUPOS,
-    TIPO_REGISTRO,
-    TIPOS_CONDICOES,
     TIPOS_RETORNOS,
+)
+from app.constants.enums import (
+    Categoria,
+    ModeloProcessamento,
+    SubGrupos,
+    TipoCondicoes,
+    TipoRegistro,
 )
 
 
 def ask_categoria() -> str:
-    return questionary.select(
-        "Qual categoria o registro atual promove?",
-        list(CATEGORIAS.keys()),
-        show_selected=True,
+    return q.select(
+        "Qual categoria o registro atual promove?", [c.label for c in Categoria]
     ).ask()
 
 
-def ask_grupo(grupo_escolhido) -> int:
-    opcoes_grupos_selecionada = None
+def ask_grupo(grupo_escolhido: str) -> int:
+    opcoes_grupos_selecionada: list[str] | None = None
+    dicionario_subgrupos = {sb.name: sb.value for sb in SubGrupos}
 
     for grupo in grupo_escolhido.title().split():
         opcoes_grupos_selecionada = (
             [
                 nome_grupo
-                for nome_grupo in list(SUB_GRUPOS.keys())
+                for nome_grupo in list(dicionario_subgrupos.keys())
                 if grupo == nome_grupo.split()[0]
             ]
             if grupo in OPCOES_GRUPOS
@@ -36,53 +37,45 @@ def ask_grupo(grupo_escolhido) -> int:
         )
 
     resposta = (
-        questionary.select(
-            "Qual o grupo principal do registro?",
-            opcoes_grupos_selecionada,
-            show_selected=True,
-        ).ask()
+        q.select("Qual o grupo principal do registro?", opcoes_grupos_selecionada).ask()
         if opcoes_grupos_selecionada
-        else questionary.select(
-            "Qual o grupo principal do registro?",
-            list(SUB_GRUPOS.keys()),
-            show_selected=True,
+        else q.select(
+            "Qual o grupo principal do registro?", list(dicionario_subgrupos.keys())
         ).ask()
     )
-    return SUB_GRUPOS[resposta]
+    return dicionario_subgrupos[resposta]
 
 
 def ask_descricao() -> str:
-    questionary.print("Preencha a descrição do novo registro: ", style="bold")
-    predefinicao = questionary.confirm(
-        "Deseja escolher entre as descrições pré-definidas?"
-    ).ask()
+    q.print("Preencha a descrição do novo registro: ", style="bold")
+    predefinicao = q.confirm("Deseja escolher entre as descrições pré-definidas?").ask()
 
     if predefinicao:
-        return questionary.select(
-            "Selecione a descrição base para a configuração:",
-            DESCRICOES_PADRAO,
+        return q.select(
+            "Selecione a descrição base para a configuração:", DESCRICOES_PADRAO
         ).ask()
-    descricao_usuario = questionary.text("Escreva a descrição do registro: ").ask()
+
+    descricao_usuario = q.text("Escreva a descrição do registro: ").ask()
     return descricao_usuario
 
 
 def ask_tipo_registro() -> int:
-    tipo_registro = questionary.select(
-        "Qual o tipo estrutural do registro?",
-        list(TIPO_REGISTRO.keys()),
-        show_selected=True,
+    dicionario_tipo_registro = {tp.name: tp.value for tp in TipoRegistro}
+    tipo_registro = q.select(
+        "Qual o tipo estrutural do registro?", list(dicionario_tipo_registro.keys())
     ).ask()
-    return TIPO_REGISTRO[tipo_registro]
+
+    return dicionario_tipo_registro[tipo_registro]
 
 
 def ask_link_recurso(tipo_recurso: str) -> str:
-    url_str = questionary.text(f"Qual a url do recurso ({tipo_recurso})? ").ask()
+    url_str = q.text(f"Qual a url do recurso ({tipo_recurso})? ").ask()
     index_url = url_str.find("/uploads")
     return url_str[index_url::]
 
 
 def ask_link_nivel(indice_nivel: int) -> str:
-    url_nivel = questionary.text(
+    url_nivel = q.text(
         f"Qual a url associada ao nível (índice: {indice_nivel})? "
     ).ask()
     index_url = url_nivel.find("/uploads")
@@ -90,37 +83,34 @@ def ask_link_nivel(indice_nivel: int) -> str:
 
 
 def ask_tipo_fonte() -> int:
-    tipo_fonte = questionary.select(
-        "Selecione a fonte de dados primária: ",
-        ["Entidades Individuais", "Ramificações"],
-        show_selected=True,
+    tipo_fonte = q.select(
+        "Selecione a fonte de dados primária: ", ["Entidades", "Ramificações"]
     ).ask()
     return 1 if tipo_fonte.lower().startswith("e") else 2
 
 
 def ask_tipo_retorno() -> int:
-    tipo_retorno = questionary.select(
-        "Selecione o tipo de retorno do registro: ",
-        choices=list(TIPOS_RETORNOS.keys()),
-        show_selected=True,
+    tipo_retorno = q.select(
+        "Selecione o tipo de retorno do registro: ", choices=list(TIPOS_RETORNOS.keys())
     ).ask()
     return TIPOS_RETORNOS[tipo_retorno]
 
 
 def ask_tipo_condicao() -> int:
-    tipo_condicao = questionary.select(
+    dicionario_tipo_condicoes = {tp.name: tp.value for tp in TipoCondicoes}
+
+    tipo_condicao = q.select(
         "Qual o tipo de condição que será inserida? ",
-        choices=list(TIPOS_CONDICOES.keys()),
-        show_selected=True,
+        choices=list(dicionario_tipo_condicoes.keys()),
     ).ask()
-    return TIPOS_CONDICOES[tipo_condicao]
+    return dicionario_tipo_condicoes[tipo_condicao]
 
 
 def ask_valor_decimal(pergunta: str, tipo_retorno: int = 1) -> float:
     if tipo_retorno != 1:
         return 0.0
 
-    valor = questionary.text(pergunta).ask()
+    valor = q.text(pergunta).ask()
 
     if not valor.isnumeric():
         raise ValueError("O valor precisa ser numérico para continuar.")
@@ -129,7 +119,7 @@ def ask_valor_decimal(pergunta: str, tipo_retorno: int = 1) -> float:
 
 
 def ask_valor_inteiro(pergunta: str) -> int | None:
-    valor = questionary.text(pergunta).ask()
+    valor = q.text(pergunta).ask()
 
     if not valor:
         return None
@@ -144,22 +134,20 @@ def converter_para_inteiro(texto: str) -> int:
 
 
 def ask_booleano(pergunta: str) -> bool:
-    return questionary.confirm(pergunta).ask()
+    return q.confirm(pergunta).ask()
 
 
 def ask_parametros_inicializacao() -> tuple[int, int]:
     quantidade_retornos = 1
     quantidade_condicoes = 1
 
-    mais_retornos = questionary.confirm(
-        "Este registro possui mais de um retorno atrelado?"
-    ).ask()
+    mais_retornos = q.confirm("Este registro possui mais de um retorno atrelado?").ask()
 
     if mais_retornos:
         resposta = ask_valor_inteiro("Quantos retornos serão associados ao registro? ")
         quantidade_retornos = resposta if resposta else 1
 
-    mais_condicoes = questionary.confirm(
+    mais_condicoes = q.confirm(
         "Este registro possui mais de uma condição atrelada?"
     ).ask()
 
@@ -171,12 +159,12 @@ def ask_parametros_inicializacao() -> tuple[int, int]:
 
 
 def ask_periodo_especifico() -> int | None:
-    resposta = questionary.confirm(
+    resposta = q.confirm(
         "Deseja selecionar um mês específico para o processamento?"
     ).ask()
 
     if resposta:
-        mes_escolhido = questionary.select(
+        mes_escolhido = q.select(
             "Selecione o mês: ", choices=list(MESES.keys()), show_selected=True
         ).ask()
         return int(MESES[mes_escolhido])
@@ -184,9 +172,8 @@ def ask_periodo_especifico() -> int | None:
 
 
 def ask_modelo_processamento() -> str:
-    escolha = questionary.select(
-        "Selecione o modelo de processamento:",
-        choices=list(MODELOS_PROCESSAMENTO.keys()),
-        show_selected=True,
+    dicionario_modelo = {mp.tipo_processamento: mp.modelo for mp in ModeloProcessamento}
+    escolha = q.select(
+        "Selecione o modelo de processamento:", choices=list(dicionario_modelo.keys())
     ).ask()
-    return MODELOS_PROCESSAMENTO[escolha]
+    return dicionario_modelo[escolha]

@@ -4,7 +4,6 @@ from os import getenv
 from dotenv import load_dotenv
 
 load_dotenv()
-
 AMBIENTE_PRINCIPAL = getenv("AMBIENTE_PRINCIPAL")
 AMBIENTE_TESTE = getenv("AMBIENTE_TESTE")
 
@@ -24,4 +23,5 @@ def obter_argumentos():
     args = parser.parse_args()
     servidor = args.principal
     banco_dados = "SISTEMA_DB"
+
     return servidor, banco_dados

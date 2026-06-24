@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Dict, List, NamedTuple
 
-import questionary
+import questionary as q
 
 from app.commands.commands import (
     ask_categoria,
@@ -12,10 +12,10 @@ from app.commands.commands import (
     ask_tipo_fonte,
     ask_tipo_registro,
 )
-from app.constants import VINCULO_CATEGORIA
+from app.constants.enums import CategoriaEnum
 from app.services.calendar import selecionar_data
 
-from .commands import _build_attr_condicoes, _build_attr_niveis, _build_attr_retornos
+from .commands import build_attr_condicoes, build_attr_niveis, build_attr_retornos
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Registro:
 
     @classmethod
     def create(cls) -> "Registro":
-        nome_registro_ = questionary.text("Qual o nome do novo registro? ").ask()
+        nome_registro_ = q.text("Qual o nome do novo registro? ").ask()
         descricao_ = ask_descricao()
         tipo_participante_ = ask_grupo(nome_registro_)
         nu_ano_mes, data_fim_processamento = selecionar_data()
@@ -84,9 +84,11 @@ class Categoria:
 
     @classmethod
     def create(cls):
+        vinculo_categoria = {c.label: c.empresa_id for c in CategoriaEnum}
+
         nome_categoria_ = ask_categoria()
         tipo_fonte_ = ask_tipo_fonte()
-        vinculo_id_ = VINCULO_CATEGORIA[nome_categoria_]
+        vinculo_id_ = vinculo_categoria[nome_categoria_]
 
         return cls(
             id_categoria=None,
@@ -122,7 +124,7 @@ class Retorno:
         return cls(
             nu_ano_mes=nu_ano_mes,
             quantidade_retornos=quantidade_retornos,
-            lista_retornos=_build_attr_retornos(
+            lista_retornos=build_attr_retornos(
                 nu_ano_mes, None, None, quantidade_retornos
             ),
         )
@@ -165,7 +167,7 @@ class Condicao:
             dicionario_categoria=dicionario_categoria,
             nu_ano_mes=nu_ano_mes,
             quantidade_condicoes=quantidade_condicoes,
-            lista_condicoes=_build_attr_condicoes(
+            lista_condicoes=build_attr_condicoes(
                 None, nu_ano_mes, dicionario_categoria, quantidade_condicoes
             ),
         )
@@ -192,7 +194,7 @@ class CondicaoNivel:
     def build(cls, lista_retornos: list):
         return cls(
             lista_retornos=lista_retornos,
-            lista_niveis=_build_attr_niveis(lista_retornos),
+            lista_niveis=build_attr_niveis(lista_retornos),
         )
 
     def reset_id_condicao(self, index):

@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.constants import SUB_GRUPOS
+from app.constants.enums import SubGrupos
 from core.domain.models import Categoria, Registro
 
 
-def criar_diretorio(caminho_str: str) -> None:
-    caminho = Path(caminho_str)
+def criar_diretorio(caminho: Path) -> None:
     caminho.mkdir(parents=True, exist_ok=True)
 
 
 def nome_diretorio_registro(
     categoria_vinculada: Categoria, registro_principal: Registro
-):
-    for chave, valor in SUB_GRUPOS.items():
+) -> str:
+    sub_grupos = {sg.name: sg.value for sg in SubGrupos}
+    for chave, valor in sub_grupos.items():
         if registro_principal.tipo_registro in (10, 12):
             return (
                 (
@@ -49,3 +49,8 @@ def nome_diretorio_registro(
                 .lower()
                 .strip()
             )
+
+    return (
+        f"{categoria_vinculada.id_registro}-padrao-"
+        f"{categoria_vinculada.nome_categoria}".lower().strip()
+    )

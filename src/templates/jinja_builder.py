@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from jinjasql import JinjaSql
-from questionary import select
+import questionary as q
 
 from app.commands.commands import ask_modelo_processamento
-from app.constants import CATEGORIAS
+from app.constants.enums import CategoriaEnum
 from core.domain.models import Categoria, Condicao, CondicaoNivel
 from infra.db.conn import servidor
 from infra.db.repositories import select_statement_categoria
@@ -16,7 +16,7 @@ DIRETORIO_TEMPLATES = Path(__file__).parent / ".sql"
 
 
 def aux_parametros_template(pergunta: str, escolhas: list[str], input_usuario: str):
-    id_especificado = select(pergunta, escolhas, show_selected=True).ask()
+    id_especificado = q.select(pergunta, escolhas, show_selected=True).ask()
     if id_especificado.startswith("s"):
         entrada_id = input(input_usuario)
         lista_especificada_id = [
@@ -43,6 +43,8 @@ def parametros_template(
     condicoes: Condicao,
     condicoes_niveis: CondicaoNivel,
 ):
+
+    dicionario_categoria = {c.label: c.empresa_id for c in CategoriaEnum}
 
     lista_categoria = []
     lista_siglas_entidades = []
@@ -81,8 +83,8 @@ def parametros_template(
         "insira os id's dos sub-grupos (separe por espaços, exemplo: '3 4 5'...): ",
     )
 
-    if nome_categoria in list(CATEGORIAS.keys()):
-        id_categoria = CATEGORIAS[nome_categoria]
+    if nome_categoria in list(dicionario_categoria.keys()):
+        id_categoria = dicionario_categoria[nome_categoria]
         lista_categoria.extend(
             id_categoria if isinstance(id_categoria, list) else [id_categoria]
         )
