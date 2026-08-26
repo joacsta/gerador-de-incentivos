@@ -19,6 +19,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Criar Banco de Dados
+
+```bash
+sqlite3 incentivos.db < schema.sql
+```
+
 ## Execução
 
 ```bash
