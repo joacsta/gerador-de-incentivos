@@ -6,8 +6,12 @@ from infra.db.tables import table_categoria
 
 def insert_statement(conn, table: Table, data: dict) -> int:
     coluna_pk = list(table.primary_key.columns)[0]
-    statement = insert(table).values(data).returning(coluna_pk)
-    return conn.execute(statement).scalar_one()
+    statement = insert(table).values(data)
+    if conn.dialect.insert_returning:
+        return conn.execute(statement.returning(coluna_pk)).scalar_one()
+
+    result = conn.execute(statement)
+    return result.inserted_primary_key[0]
 
 
 def select_statement_categoria(id_registro: int, motor: Engine) -> int | None:
@@ -24,6 +28,6 @@ def select_statement_categoria(id_registro: int, motor: Engine) -> int | None:
 def select_stmt_registros():
     motor = servidor.conectar()
     tabela_usuario = Table(
-        "tblRegistro", metadata=metadata, autoload_with=motor, schema="ModuloPrincipal"
+        "tblRegistro", metadata=metadata, autoload_with=motor, schema=servidor.schema
     )
     return select(tabela_usuario).order_by(tabela_usuario.c.idRegistro.desc()).limit(10)

@@ -3,35 +3,27 @@ from sqlalchemy import Table
 from infra.db.conn import metadata, servidor
 
 
+def _table(nome: str) -> Table:
+    return Table(
+        nome, metadata, autoload_with=servidor.conectar(), schema=servidor.schema
+    )
+
+
 def table_registro() -> Table:
-    motor = servidor.conectar()
-    return Table("tblRegistro", metadata, autoload_with=motor, schema="ModuloPrincipal")
+    return _table("tblRegistro")
 
 
 def table_categoria() -> Table:
-    motor = servidor.conectar()
-    return Table(
-        "tblCategoriaVinculada", metadata, autoload_with=motor, schema="ModuloPrincipal"
-    )
+    return _table("tblCategoriaVinculada")
 
 
 def table_retorno() -> Table:
-    motor = servidor.conectar()
-    return Table("tblRetorno", metadata, autoload_with=motor, schema="ModuloPrincipal")
+    return _table("tblRetorno")
 
 
 def table_condicao() -> Table:
-    motor = servidor.conectar()
-    return Table(
-        "tblRegistroCondicao", metadata, autoload_with=motor, schema="ModuloPrincipal"
-    )
+    return _table("tblRegistroCondicao")
 
 
 def table_condicao_nivel() -> Table:
-    motor = servidor.conectar()
-    return Table(
-        "tblRegistroCondicaoNivel",
-        metadata,
-        autoload_with=motor,
-        schema="ModuloPrincipal",
-    )
+    return _table("tblRegistroCondicaoNivel")

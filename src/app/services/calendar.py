@@ -44,7 +44,8 @@ def selecionar_data():
         calendario_dias_uteis_mes_especifico = calendario.dias_uteis(mes_especifico)
 
         fim_processamento = calendario_dias_uteis_mes_especifico[9]
-        # regra de negocio: fim do processamento ser 8 dias uteis apos o fim do processamento
+        # exemplo de regra de negocio: fim do processamento ser 8 dias uteis apos o fim
+        # do processamento
 
         nu_ano_mes_especifico = calendario.nu_ano_mes
         return nu_ano_mes_especifico, fim_processamento
@@ -54,7 +55,8 @@ def selecionar_data():
     calendario_dias_uteis = calendario.dias_uteis(periodo_registro)
 
     fim_processamento = calendario_dias_uteis[9]
-    # regra de negocio: fim do processamento ser 8 dias uteis apos o fim do processamento
+    # exemplo de regra de negocio: fim do processamento ser 8 dias uteis apos o fim do
+    # processamento
 
     nu_ano_mes = calendario.nu_ano_mes
 
