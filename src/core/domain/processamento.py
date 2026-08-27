@@ -5,7 +5,11 @@ from sqlalchemy import text
 from core.domain.models import Categoria, Condicao, CondicaoNivel, Registro
 from infra.db.conn import servidor
 from infra.filesystem.writer import gerar_script_processamento
-from templates.jinja_builder import parametros_template, selecionar_template
+from templates.strategies import (
+    TemplateProcessamentoStrategy,
+    estrategia_para_processamento,
+    selecionar_estrategia,
+)
 
 
 class Processamento:
@@ -25,17 +29,19 @@ class Processamento:
         self.registro_principal = registro_principal
 
         self.processamento_selecionado = None
+        self.estrategia: TemplateProcessamentoStrategy | None = None
         self.declaracao = None
         self.query = None
         self.parametros = None
 
     def selecionar_processamento(self) -> str:
-        self.processamento_selecionado = selecionar_template()
+        self.estrategia = selecionar_estrategia()
+        self.processamento_selecionado = self.estrategia.template
         return self.processamento_selecionado
 
     def selecionar_modelo(self, processamento):
-        return parametros_template(
-            processamento,
+        estrategia = self.estrategia or estrategia_para_processamento(processamento)
+        return estrategia.construir_parametros(
             self.nome_categoria,
             self.categoria_vinculada,
             self.condicoes,

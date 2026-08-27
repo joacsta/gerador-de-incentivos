@@ -4,8 +4,12 @@ from os import getenv
 from dotenv import load_dotenv
 
 load_dotenv()
-AMBIENTE_PRINCIPAL = getenv("AMBIENTE_PRINCIPAL")
-AMBIENTE_TESTE = getenv("AMBIENTE_TESTE")
+AMBIENTE_PRINCIPAL = getenv("AMBIENTE_PRINCIPAL", "principal")
+AMBIENTE_TESTE = getenv("AMBIENTE_TESTE", "teste")
+DATABASE_URL = getenv("DATABASE_URL")
+DATABASE_URL_PRINCIPAL = getenv("DATABASE_URL_PRINCIPAL")
+DATABASE_URL_TESTE = getenv("DATABASE_URL_TESTE")
+DB_SCHEMA = getenv("DB_SCHEMA", "ModuloPrincipal")
 
 
 def obter_argumentos():

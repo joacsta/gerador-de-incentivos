@@ -1,7 +1,9 @@
+-- sql server: variaveis locais, getdate e nomes de schema qualificados exigem adaptacao.
 DECLARE @idRegistro int = {{ registro_id }},
         @idCategoriaVinculada int = {{ registro_categoria_id }},
         @dhAtualizacao datetime = GETDATE();
 
+-- sql server: tabelas temporarias locais usam # e drop table if exists.
 DROP TABLE IF EXISTS #BASE_ANALITICO;
 DROP TABLE IF EXISTS #RESULTADOS;
 
@@ -24,6 +26,7 @@ SELECT
     CN.idCondicaoNivel,
     CN.vrNivel AS vrObjetivo,
     A.vrRealizado,
+    -- sql server: iif deve ser substituido por case when em outros bancos.
     IIF(A.vrRealizado >= CN.vrNivel, 1, 0) AS icHabilitado,
     @dhAtualizacao AS dhAtualizacao
 INTO #RESULTADOS
@@ -31,6 +34,7 @@ FROM #BASE_ANALITICO A
 JOIN SISTEMA.Motor.tblRegistroCondicao C ON C.idRegistro = @idRegistro
 JOIN SISTEMA.Motor.tblRegistroCondicaoNivel CN ON CN.idCondicao = C.idCondicao;
 
+-- sql server: merge e suas clausulas when matched sao especificos do dialeto.
 MERGE SISTEMA.Motor.tblCondicaoEntidade AS TARGET
 USING #RESULTADOS AS SOURCE
 ON (
