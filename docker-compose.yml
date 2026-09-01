@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mssql_db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -14,3 +16,9 @@ services:
       - ./mssql-data:/var/opt/mssql
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
